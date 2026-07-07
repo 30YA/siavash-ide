@@ -31,7 +31,11 @@ export function EditorTabs({
   openTabs,
 }: EditorTabsProps) {
   return (
-    <div className="ide-tab-bar" role="tablist" aria-label="Open files">
+    <div
+      className="flex min-w-0 overflow-x-auto border-b border-border bg-tab max-sm:h-10"
+      role="tablist"
+      aria-label="Open files"
+    >
       {openTabs.map((tab) => {
         const file = getFile(tab);
         const Icon = file.icon;
@@ -39,11 +43,22 @@ export function EditorTabs({
         return (
           <ContextMenu key={tab}>
             <ContextMenuTrigger asChild>
-              <button
-                className={cn("ide-tab", activeFile === tab && "is-active")}
+              <div
+                className={cn(
+                  "group relative flex h-9 min-w-[clamp(9rem,15vw,12.5rem)] max-w-60 items-center gap-2 border-r border-border bg-transparent px-2 pl-3 text-left text-muted-foreground transition-colors hover:bg-tab-active/75 hover:text-foreground",
+                  "before:absolute before:inset-x-0 before:top-0 before:hidden before:h-0.5 before:bg-primary",
+                  activeFile === tab && "bg-tab-active text-foreground before:block",
+                )}
                 onClick={() => onActivate(tab)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onActivate(tab);
+                  }
+                }}
                 role="tab"
                 aria-selected={activeFile === tab}
+                tabIndex={0}
               >
                 <Icon className="size-4 shrink-0" />
                 <span className="truncate">{file.name}</span>
@@ -60,7 +75,7 @@ export function EditorTabs({
                 >
                   <X className="size-3.5" />
                 </Button>
-              </button>
+              </div>
             </ContextMenuTrigger>
             <ContextMenuContent>
               <ContextMenuItem onSelect={() => onActivate(tab)}>Open</ContextMenuItem>

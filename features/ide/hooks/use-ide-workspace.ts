@@ -2,17 +2,22 @@
 
 import { KeyboardEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "next-themes";
-import { commands, getFile, portfolioFiles, projects } from "../data/workspace";
+import { commands, getFile, initLines, portfolioFiles, projects } from "../data/workspace";
+import { createMailto, profile } from "../data/profile";
+import { useEditorTabs } from "./use-editor-tabs";
+import { useReadyStep } from "./use-ready-step";
+import { useSidebarState } from "./use-sidebar-state";
 import type { Command, FileId, Project } from "../types";
 
 type UseIdeWorkspace = {
   activeFile: FileId;
   activeProject: Project;
   expandedCommit: number;
-  explorerOpen: boolean;
+  desktopExplorerOpen: boolean;
   fileSearch: string;
   filteredCommands: Command[];
   commandQuery: string;
+  mobileExplorerOpen: boolean;
   openTabs: FileId[];
   paletteInputRef: RefObject<HTMLInputElement | null>;
   paletteOpen: boolean;
@@ -21,7 +26,7 @@ type UseIdeWorkspace = {
   setActiveFile: (file: FileId) => void;
   setActiveProject: (project: Project) => void;
   setExpandedCommit: (index: number) => void;
-  setExplorerOpen: (open: boolean) => void;
+  closeMobileExplorer: () => void;
   setFileSearch: (value: string) => void;
   setCommandQuery: (value: string) => void;
   setPaletteOpen: (open: boolean) => void;
@@ -31,24 +36,22 @@ type UseIdeWorkspace = {
   closeTabsToRight: (file: FileId) => void;
   onPaletteKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
   openFile: (file: FileId) => void;
+  openExplorer: () => void;
   openPalette: () => void;
   runCommand: (action: string) => void;
+  toggleExplorer: () => void;
 };
 
-const githubUrl = "https://github.com";
-const linkedinUrl = "https://linkedin.com";
-
 export function useIdeWorkspace(): UseIdeWorkspace {
-  const [openTabs, setOpenTabs] = useState<FileId[]>(["about"]);
-  const [activeFile, setActiveFile] = useState<FileId>("about");
+  const tabs = useEditorTabs("about");
+  const sidebar = useSidebarState();
   const [activeProject, setActiveProject] = useState(projects[0]);
   const [expandedCommit, setExpandedCommit] = useState(0);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
   const [fileSearch, setFileSearch] = useState("");
   const [selectedCommand, setSelectedCommand] = useState(0);
-  const [readyStep, setReadyStep] = useState(0);
-  const [explorerOpen, setExplorerOpen] = useState(false);
+  const readyStep = useReadyStep(initLines.length);
   const paletteInputRef = useRef<HTMLInputElement>(null);
   const { setTheme, theme } = useTheme();
 
@@ -62,12 +65,6 @@ export function useIdeWorkspace(): UseIdeWorkspace {
   }, [commandQuery]);
 
   useEffect(() => {
-    if (readyStep >= 6) return;
-    const timer = window.setTimeout(() => setReadyStep((step) => step + 1), 360);
-    return () => window.clearTimeout(timer);
-  }, [readyStep]);
-
-  useEffect(() => {
     if (!paletteOpen) return;
     requestAnimationFrame(() => paletteInputRef.current?.focus());
   }, [paletteOpen]);
@@ -79,37 +76,9 @@ export function useIdeWorkspace(): UseIdeWorkspace {
   }, []);
 
   const openFile = useCallback((fileId: FileId) => {
-    setOpenTabs((tabs) => (tabs.includes(fileId) ? tabs : [...tabs, fileId]));
-    setActiveFile(fileId);
-    setExplorerOpen(false);
-  }, []);
-
-  const closeTab = useCallback(
-    (fileId: FileId) => {
-      setOpenTabs((tabs) => {
-        const nextTabs = tabs.filter((tab) => tab !== fileId);
-        if (activeFile === fileId) {
-          setActiveFile(nextTabs.at(-1) ?? "about");
-        }
-        return nextTabs.length ? nextTabs : ["about"];
-      });
-    },
-    [activeFile],
-  );
-
-  const closeOtherTabs = useCallback((fileId: FileId) => {
-    setOpenTabs([fileId]);
-    setActiveFile(fileId);
-  }, []);
-
-  const closeTabsToRight = useCallback((fileId: FileId) => {
-    setOpenTabs((tabs) => {
-      const index = tabs.indexOf(fileId);
-      if (index < 0) return tabs;
-      return tabs.slice(0, index + 1);
-    });
-    setActiveFile(fileId);
-  }, []);
+    tabs.openTab(fileId);
+    sidebar.closeMobileExplorer();
+  }, [sidebar, tabs]);
 
   const runCommand = useCallback(
     (action: string) => {
@@ -122,28 +91,35 @@ export function useIdeWorkspace(): UseIdeWorkspace {
       }
 
       if (action === "github") {
-        window.open(githubUrl, "_blank", "noopener,noreferrer");
+        window.open(profile.githubUrl, "_blank", "noopener,noreferrer");
       }
 
       if (action === "linkedin") {
-        window.open(linkedinUrl, "_blank", "noopener,noreferrer");
+        window.open(profile.linkedinUrl, "_blank", "noopener,noreferrer");
+      }
+
+      if (action === "email") {
+        window.location.href = createMailto();
       }
 
       if (action === "resume") {
-        openFile("contact");
+        window.location.href = createMailto({
+          subject: profile.resumeRequestSubject,
+          body: "Hi Siavash,\n\nPlease send me your latest resume.\n\nThanks,",
+        });
       }
 
       if (action === "explorer") {
-        setExplorerOpen(true);
+        sidebar.openExplorer();
       }
 
       if (action === "search") {
-        setExplorerOpen(true);
+        sidebar.openExplorer();
       }
 
       setPaletteOpen(false);
     },
-    [openFile, setTheme, theme],
+    [openFile, setTheme, sidebar, theme],
   );
 
   const onPaletteKeyDown = useCallback(
@@ -179,12 +155,12 @@ export function useIdeWorkspace(): UseIdeWorkspace {
 
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "b") {
         event.preventDefault();
-        setExplorerOpen((open) => !open);
+        sidebar.toggleExplorer();
       }
 
       if (event.key === "Escape") {
         setPaletteOpen(false);
-        setExplorerOpen(false);
+        sidebar.closeMobileExplorer();
       }
 
       if ((event.altKey || event.metaKey) && /^[1-7]$/.test(event.key)) {
@@ -195,35 +171,38 @@ export function useIdeWorkspace(): UseIdeWorkspace {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [openFile, openPalette]);
+  }, [openFile, openPalette, sidebar]);
 
   return {
-    activeFile,
+    activeFile: tabs.activeFile,
     activeProject,
     commandQuery,
     expandedCommit,
-    explorerOpen,
+    desktopExplorerOpen: sidebar.desktopExplorerOpen,
     fileSearch,
     filteredCommands,
-    openTabs,
+    mobileExplorerOpen: sidebar.mobileExplorerOpen,
+    openTabs: tabs.openTabs,
     paletteInputRef,
     paletteOpen,
     readyStep,
     selectedCommand,
-    setActiveFile,
+    setActiveFile: tabs.setActiveFile,
     setActiveProject,
     setExpandedCommit,
-    setExplorerOpen,
+    closeMobileExplorer: sidebar.closeMobileExplorer,
     setFileSearch,
     setCommandQuery,
     setPaletteOpen,
     setSelectedCommand,
-    closeTab,
-    closeOtherTabs,
-    closeTabsToRight,
+    closeTab: tabs.closeTab,
+    closeOtherTabs: tabs.closeOtherTabs,
+    closeTabsToRight: tabs.closeTabsToRight,
     onPaletteKeyDown,
     openFile: (fileId) => openFile(getFile(fileId).id),
+    openExplorer: sidebar.openExplorer,
     openPalette,
     runCommand,
+    toggleExplorer: sidebar.toggleExplorer,
   };
 }

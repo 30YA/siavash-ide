@@ -8,7 +8,10 @@ export function StatusBar({ activeFile, openCount }: { activeFile: FileId; openC
   const file = getFile(activeFile);
 
   return (
-    <footer className="ide-status-bar" aria-label="Status bar">
+    <footer
+      className="flex min-h-6 min-w-0 items-center justify-between gap-4 overflow-x-auto whitespace-nowrap bg-status px-2 font-mono text-[0.68rem] text-status-foreground max-sm:min-h-7 max-sm:justify-start"
+      aria-label="Status bar"
+    >
       <div className="flex min-w-max items-center gap-3">
         <span className="inline-flex items-center gap-1.5">
           <GitBranch className="size-3.5" />

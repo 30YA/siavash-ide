@@ -9,7 +9,10 @@ export function Breadcrumbs({ activeFile }: { activeFile: FileId }) {
   const parts = file.path.split("/");
 
   return (
-    <nav className="ide-breadcrumbs" aria-label="Breadcrumb">
+    <nav
+      className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap border-b border-border bg-editor px-3.5 py-2 font-mono text-xs text-muted-foreground max-sm:px-2.5"
+      aria-label="Breadcrumb"
+    >
       <Home className="size-3.5" />
       <span>portfolio</span>
       {parts.map((part) => (

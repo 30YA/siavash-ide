@@ -5,24 +5,35 @@ import { BriefcaseBusiness, ExternalLink, Files, GitBranch, Moon, PanelLeft, Sea
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { profile } from "../data/profile";
 
 type ActivityBarProps = {
   activeView: "explorer" | "search";
   onOpenExplorer: () => void;
   onOpenPalette: () => void;
   onOpenProjects: () => void;
+  onToggleExplorer: () => void;
 };
 
-export function ActivityBar({ activeView, onOpenExplorer, onOpenPalette, onOpenProjects }: ActivityBarProps) {
+export function ActivityBar({
+  activeView,
+  onOpenExplorer,
+  onOpenPalette,
+  onOpenProjects,
+  onToggleExplorer,
+}: ActivityBarProps) {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme !== "light";
 
   return (
-    <aside className="ide-activity-bar" aria-label="Activity bar">
-      <div className="ide-traffic" aria-hidden="true">
-        <span />
-        <span />
-        <span />
+    <aside
+      className="hidden min-w-0 flex-col items-center gap-3 border-r border-border bg-activity px-0 py-2 sm:flex"
+      aria-label="Activity bar"
+    >
+      <div className="grid gap-1 pb-2 pt-0.5" aria-hidden="true">
+        <span className="size-2.5 rounded-full bg-[#e06c75]" />
+        <span className="size-2.5 rounded-full bg-[#e5c07b]" />
+        <span className="size-2.5 rounded-full bg-[#98c379]" />
       </div>
 
       <nav className="flex flex-1 flex-col items-center gap-1.5">
@@ -34,12 +45,12 @@ export function ActivityBar({ activeView, onOpenExplorer, onOpenPalette, onOpenP
         />
         <ActivityButton label="Search files" active={activeView === "search"} onClick={onOpenPalette} icon={<Search />} />
         <ActivityButton label="Projects" onClick={onOpenProjects} icon={<BriefcaseBusiness />} />
-        <ActivityButton label="Toggle sidebar" onClick={onOpenExplorer} icon={<PanelLeft />} />
+        <ActivityButton label="Toggle sidebar" onClick={onToggleExplorer} icon={<PanelLeft />} />
       </nav>
 
       <nav className="flex flex-col items-center gap-1.5">
-        <ActivityButton label="GitHub" onClick={() => window.open("https://github.com", "_blank")} icon={<GitBranch />} />
-        <ActivityButton label="LinkedIn" onClick={() => window.open("https://linkedin.com", "_blank")} icon={<ExternalLink />} />
+        <ActivityButton label="GitHub" onClick={() => window.open(profile.githubUrl, "_blank")} icon={<GitBranch />} />
+        <ActivityButton label="LinkedIn" onClick={() => window.open(profile.linkedinUrl, "_blank")} icon={<ExternalLink />} />
         <ActivityButton
           label="Toggle theme"
           onClick={() => setTheme(isDark ? "light" : "dark")}

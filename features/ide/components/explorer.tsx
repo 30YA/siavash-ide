@@ -1,22 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, FileSearch, MoreHorizontal, PanelLeftClose, Plus, Search } from "lucide-react";
+import { useMemo } from "react";
+import { ChevronDown, FileSearch, MoreHorizontal, PanelLeftClose, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
-import { fileTree, getFile, portfolioFiles } from "../data/workspace";
-import type { FileId, FileTreeNode } from "../types";
+import { fileTree, portfolioFiles } from "../data/workspace";
+import { FileResult, TreeNode } from "./explorer-tree";
+import type { FileId } from "../types";
 
 type ExplorerProps = {
   activeFile: FileId;
   fileSearch: string;
+  isDesktopOpen: boolean;
   isMobileOpen: boolean;
   onCloseMobile: () => void;
   onFileSearch: (value: string) => void;
@@ -27,6 +22,7 @@ type ExplorerProps = {
 export function Explorer({
   activeFile,
   fileSearch,
+  isDesktopOpen,
   isMobileOpen,
   onCloseMobile,
   onFileSearch,
@@ -43,7 +39,7 @@ export function Explorer({
     <>
       <div
         className={cn(
-          "fixed inset-0 z-30 bg-black/45 opacity-0 pointer-events-none transition-opacity lg:hidden",
+          "pointer-events-none fixed inset-0 z-30 bg-black/45 opacity-0 transition-opacity lg:hidden",
           isMobileOpen && "pointer-events-auto opacity-100",
         )}
         onClick={onCloseMobile}
@@ -51,8 +47,9 @@ export function Explorer({
       />
       <aside
         className={cn(
-          "ide-explorer",
+          "flex min-h-0 min-w-0 flex-col border-r border-border bg-explorer transition-[width,transform,border-color,background-color] duration-200",
           "max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-40 max-lg:w-[min(21rem,86vw)] max-lg:-translate-x-full max-lg:shadow-2xl",
+          isDesktopOpen ? "lg:w-auto" : "lg:w-0 lg:overflow-hidden lg:border-r-0",
           isMobileOpen && "max-lg:translate-x-0",
         )}
         aria-label="Explorer"
@@ -60,7 +57,13 @@ export function Explorer({
         <header className="flex h-10 items-center justify-between border-b border-border px-3">
           <span className="text-[0.68rem] font-semibold uppercase tracking-normal text-muted-foreground">Explorer</span>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="compactIcon" aria-label="New file" title="New file">
+            <Button
+              variant="ghost"
+              size="compactIcon"
+              aria-label="Create contact draft"
+              title="Create contact draft"
+              onClick={() => onOpenFile("contact")}
+            >
               <Plus />
             </Button>
             <Button variant="ghost" size="compactIcon" aria-label="More actions" title="More actions" onClick={onOpenPalette}>
@@ -118,100 +121,15 @@ export function Explorer({
         </div>
 
         <div className="border-t border-border p-3 text-xs text-muted-foreground">
-          <div className="rounded border border-border bg-card p-3">
+          <button
+            className="w-full rounded border border-border bg-card p-3 text-left transition hover:border-primary hover:bg-accent"
+            onClick={() => onOpenFile("contact")}
+          >
             <span className="mb-1 block font-mono text-[0.68rem] uppercase">Current Status</span>
             <strong className="block text-foreground">Available for focused frontend work</strong>
-          </div>
+          </button>
         </div>
       </aside>
     </>
   );
-}
-
-function TreeNode({
-  activeFile,
-  depth = 0,
-  node,
-  onOpenFile,
-}: {
-  activeFile: FileId;
-  depth?: number;
-  node: FileTreeNode;
-  onOpenFile: (file: FileId) => void;
-}) {
-  const [expanded, setExpanded] = useState(true);
-  const Icon = node.icon;
-  const isFolder = Boolean(node.children?.length);
-  const isActive = node.fileId === activeFile;
-
-  if (isFolder) {
-    return (
-      <div>
-        <button
-          className="ide-tree-row"
-          style={{ paddingLeft: `${0.35 + depth * 0.85}rem` }}
-          onClick={() => setExpanded((open) => !open)}
-          aria-expanded={expanded}
-        >
-          {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-          <Icon className="size-4 text-folder" />
-          <span className="truncate">{node.name}</span>
-        </button>
-        {expanded && (
-          <div>
-            {node.children?.map((child) => (
-              <TreeNode key={child.id} node={child} depth={depth + 1} activeFile={activeFile} onOpenFile={onOpenFile} />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <button
-          className={cn("ide-tree-row", isActive && "is-active")}
-          style={{ paddingLeft: `${0.35 + depth * 0.85}rem` }}
-          onClick={() => node.fileId && onOpenFile(node.fileId)}
-          aria-current={isActive ? "page" : undefined}
-        >
-          <span className="w-3.5" aria-hidden="true" />
-          <Icon className={cn("size-4", node.fileId && fileColor(getFile(node.fileId).kind))} />
-          <span className="truncate">{node.name}</span>
-        </button>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onSelect={() => node.fileId && onOpenFile(node.fileId)}>Open</ContextMenuItem>
-        <ContextMenuItem onSelect={() => navigator.clipboard?.writeText(node.fileId ? getFile(node.fileId).path : node.name)}>
-          Copy path
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem disabled>Reveal in Finder</ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
-  );
-}
-
-function FileResult({ active, fileId, onOpen }: { active: boolean; fileId: FileId; onOpen: (file: FileId) => void }) {
-  const file = getFile(fileId);
-  const Icon = file.icon;
-
-  return (
-    <button className={cn("ide-search-result", active && "is-active")} onClick={() => onOpen(file.id)}>
-      <Icon className={cn("size-4", fileColor(file.kind))} />
-      <span className="min-w-0">
-        <span className="block truncate text-foreground">{file.name}</span>
-        <span className="block truncate text-[0.68rem] text-muted-foreground">{file.path}</span>
-      </span>
-    </button>
-  );
-}
-
-function fileColor(kind: string) {
-  if (kind === "md") return "text-markdown";
-  if (kind === "json") return "text-json";
-  if (kind === "tsx") return "text-tsx";
-  return "text-typescript";
 }

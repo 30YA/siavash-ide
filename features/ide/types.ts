@@ -1,6 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 
-export type FileId = "about" | "projects" | "experience" | "skills" | "thinking" | "inspect" | "contact";
+export type FileId =
+  | "about"
+  | "projects"
+  | "experience"
+  | "skills"
+  | "thinking"
+  | "inspect"
+  | "contact";
 
 export type PortfolioFile = {
   id: FileId;
@@ -30,6 +37,8 @@ export type Project = {
   challenges: string;
   solution: string;
   result: string;
+  sourceUrl?: string;
+  liveUrl?: string;
 };
 
 export type Command = {
@@ -37,4 +46,18 @@ export type Command = {
   action: string;
   hint: string;
   icon: LucideIcon;
+};
+
+export type ExperienceItem = {
+  company: string;
+  role: string;
+  duration: string;
+  achievements: string[];
+  technologies: string[];
+};
+
+export type SkillGroup = {
+  group: string;
+  icon: LucideIcon;
+  children: Array<[string, string, string]>;
 };

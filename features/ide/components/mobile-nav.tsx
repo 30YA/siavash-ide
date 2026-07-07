@@ -15,7 +15,10 @@ type MobileNavProps = {
 
 export function MobileNav({ activeFile, onOpenExplorer, onOpenFile, onOpenPalette }: MobileNavProps) {
   return (
-    <nav className="ide-mobile-nav" aria-label="Mobile IDE navigation">
+    <nav
+      className="fixed inset-x-2.5 bottom-8 z-[25] hidden grid-cols-[2.5rem_repeat(5,minmax(0,1fr))_2.5rem] gap-1 rounded-lg border border-border bg-explorer/90 p-1 shadow-[var(--shadow-soft)] backdrop-blur-md max-sm:grid"
+      aria-label="Mobile IDE navigation"
+    >
       <Button variant="ghost" size="icon" aria-label="Open explorer" onClick={onOpenExplorer}>
         <Files />
       </Button>
@@ -25,7 +28,10 @@ export function MobileNav({ activeFile, onOpenExplorer, onOpenFile, onOpenPalett
         return (
           <button
             key={fileId}
-            className={cn("ide-mobile-nav-item", activeFile === fileId && "is-active")}
+            className={cn(
+              "grid h-10 min-w-0 place-items-center gap-0.5 rounded-md bg-transparent text-[0.62rem] text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+              activeFile === fileId && "bg-accent text-accent-foreground",
+            )}
             onClick={() => onOpenFile(fileId)}
             aria-label={`Open ${file.name}`}
           >
